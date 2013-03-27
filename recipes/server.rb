@@ -14,6 +14,7 @@ include_recipe "mongodb::client"
 
 package "mongo-10gen-server" do
   notifies :restart, "service[mongodb]"
+  version node[:mongodb][:server][:version]
 end
 
 directory node[:mongodb][:server][:db_dir] do
