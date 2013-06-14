@@ -12,7 +12,7 @@ recipe "mongodb::configserver", "Installs and configures a configserver for mong
 recipe "mongodb::shard", "Installs and configures a single shard"
 recipe "mongodb::replicaset", "Installs and configures a mongodb replicaset"
 
-depends "apt"
+depends "apt", ">= 1.8.2"
 depends "yum"
 
 %w{ ubuntu debian freebsd centos redhat fedora amazon scientific}.each do |os|
@@ -37,6 +37,7 @@ attribute "mongodb/port",
 attribute "mongodb/client_roles",
   :display_name => "Client Roles",
   :description => "Roles of nodes who need access to the mongodb instance",
+  :type => "array",
   :default => []
 
 attribute "mongodb/cluster_name",
@@ -52,7 +53,8 @@ attribute "mongodb/shard_name",
 attribute "mongodb/sharded_collections",
   :display_name => "Sharded Collections",
   :description => "collections to shard",
-  :default => {}
+  :type => "array",
+  :default => []
 
 attribute "mongodb/replicaset_name",
   :display_name => "Replicaset_name",
@@ -62,7 +64,11 @@ attribute "mongodb/replicaset_name",
 attribute "mongodb/enable_rest",
   :display_name => "Enable Rest",
   :description => "Enable the ReST interface of the webserver"
-
+  
+attribute "mongodb/smallfiles",
+  :display_name => "Use small files",
+  :description => "Modify MongoDB to use a smaller default data file size"
+  
 attribute "mongodb/bind_ip",
   :display_name => "Bind address",
   :description => "MongoDB instance bind address",
@@ -72,3 +78,13 @@ attribute "mongodb/package_version",
   :display_name => "MongoDB package version",
   :description => "Version of the MongoDB package to install",
   :default => nil
+
+attribute "mongodb/configfile",
+  :display_name => "Configuration File",
+  :description => "Name of configuration file to use with when starting mongod/mongos vs command line options",
+  :default => nil
+
+attribute "mongodb/nojournal",
+  :display_name => "Disable Journals",
+  :description => "Journals are enabled by default on 64bit after mongo 2.0, this can disable it",
+  :default => "false"
