@@ -54,7 +54,12 @@ class Chef::ResourceDefinitionList::MongoDB
     rs_members = []
     members.each_index do |n|
       port = members[n]['mongodb']['port']
-      rs_members << {"_id" => n, "host" => "#{members[n]['fqdn']}:#{port}"}
+      member = {"_id" => n, "host" => "#{members[n]['fqdn']}:#{port}"}
+      if(members[n]['mongodb']['arbiter'])
+        member['arbiterOnly'] = true
+      end
+
+      rs_members << member
     end
 
     
@@ -74,6 +79,7 @@ class Chef::ResourceDefinitionList::MongoDB
         "_id" => name,
         "members" => rs_members
     }
+      Chef::Log.info("ADMIN COMMAND: #{cmd.to_json}")
     
     begin
       result = admin.command(cmd, :check_response => false)
@@ -131,20 +137,26 @@ class Chef::ResourceDefinitionList::MongoDB
       else
         # remove removed members from the replicaset and add the new ones
         max_id = config['members'].collect{ |member| member['_id']}.max
-        rs_members.collect!{ |member| member['host'] }
         config['version'] += 1
-        old_members = config['members'].collect{ |member| member['host'] }
-        members_delete = old_members - rs_members        
-        config['members'] = config['members'].delete_if{ |m| members_delete.include?(m['host']) }
-        members_add = rs_members - old_members
-        members_add.each do |m|
-          max_id += 1
-          config['members'] << {"_id" => max_id, "host" => m}
+
+        all_hosts = rs_members.collect { |member| member['host'] }
+        existing_hosts = config['members'].collect{ |member| member['host'] }
+        new_hosts = all_hosts - existing_hosts
+
+        config['members'].keep_if do |member|
+          all_hosts.include?(member['host'])
         end
-        
+
+        rs_members.each do |member|
+          if(new_hosts.include?(member['host']))
+            max_id += 1
+            config['members'] << member.merge({ '_id' => max_id })
+          end
+        end
+
         rs_connection = nil
         rescue_connection_failure do
-          rs_connection = Mongo::ReplSetConnection.new( old_members) 
+          rs_connection = Mongo::ReplSetConnection.new( *existing_hosts.collect{ |m| m.split(":") })
           rs_connection.database_names #check connection
         end
         
