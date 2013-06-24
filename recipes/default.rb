@@ -24,6 +24,17 @@ package node[:mongodb][:package_name] do
   version node[:mongodb][:package_version]
 end
 
+# The mongo-10gen-server package depends on mongo-10gen, but doesn't specify a
+# version. So to prevent the server from being upgraded without the client
+# being upgraded, also explicitly install the mongo-10gen with the
+# package_version specified.
+if(node[:mongodb][:package_name] == "mongo-10gen-server")
+  package "mongo-10gen" do
+    action :install
+    version node[:mongodb][:package_version]
+  end
+end
+
 needs_mongo_gem = (node.recipe?("mongodb::replicaset") or node.recipe?("mongodb::mongos"))
 
 if needs_mongo_gem
