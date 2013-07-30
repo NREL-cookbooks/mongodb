@@ -156,7 +156,7 @@ class Chef::ResourceDefinitionList::MongoDB
 
         rs_connection = nil
         rescue_connection_failure do
-          rs_connection = Mongo::ReplSetConnection.new( *existing_hosts.collect{ |m| m.split(":") })
+          rs_connection = Mongo::ReplSetConnection.new(existing_hosts)
           rs_connection.database_names #check connection
         end
         
