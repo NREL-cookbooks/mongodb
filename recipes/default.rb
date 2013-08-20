@@ -45,7 +45,7 @@ if needs_mongo_gem
   Gem.clear_paths
 end
 
-if node.recipe?("mongodb::default") or node.recipe?("mongodb")
+if(!node.recipe?("mongodb::replicaset") && (node.recipe?("mongodb::default") || node.recipe?("mongodb")))
   # configure default instance
 
   mongodb_instance node['mongodb']['instance_name'] do
