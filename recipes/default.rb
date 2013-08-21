@@ -19,11 +19,6 @@
 # limitations under the License.
 #
 
-package node[:mongodb][:package_name] do
-  action :install
-  version node[:mongodb][:package_version]
-end
-
 # The mongo-10gen-server package depends on mongo-10gen, but doesn't specify a
 # version. So to prevent the server from being upgraded without the client
 # being upgraded, also explicitly install the mongo-10gen with the
@@ -33,6 +28,11 @@ if(node[:mongodb][:package_name] == "mongo-10gen-server")
     action :install
     version node[:mongodb][:package_version]
   end
+end
+
+package node[:mongodb][:package_name] do
+  action :install
+  version node[:mongodb][:package_version]
 end
 
 needs_mongo_gem = (node.recipe?("mongodb::replicaset") or node.recipe?("mongodb::mongos"))
