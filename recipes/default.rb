@@ -35,15 +35,33 @@ package node[:mongodb][:package_name] do
   version node[:mongodb][:package_version]
 end
 
-needs_mongo_gem = (node.recipe?("mongodb::replicaset") or node.recipe?("mongodb::mongos"))
+needs_mongo_gem = (node.recipes.include?("mongodb::replicaset") or node.recipes.include?("mongodb::mongos"))
 
+# install the mongo ruby gem at compile time to make it globally available
 if needs_mongo_gem
-  # install the mongo ruby gem at compile time to make it globally available
-  chef_gem 'mongo' do
-    action :nothing
-  end.run_action(:install)
-  Gem.clear_paths
+  if(Gem.const_defined?("Version") and Gem::Version.new(Chef::VERSION) < Gem::Version.new('10.12.0'))
+    gem_package 'mongo' do
+      action :nothing
+    end.run_action(:install)
+    Gem.clear_paths
+  else
+    chef_gem 'mongo' do
+      action :install
+    end
+  end
 end
+
+# Create keyFile if specified
+if node[:mongodb][:key_file]
+  file "/etc/mongodb.key" do
+    owner node[:mongodb][:user]
+    group node[:mongodb][:group]
+    mode  "0600"
+    backup false
+    content node[:mongodb][:key_file]
+  end
+end
+
 
 if(!node.recipe?("mongodb::replicaset") && (node.recipe?("mongodb::default") || node.recipe?("mongodb")))
   # configure default instance
