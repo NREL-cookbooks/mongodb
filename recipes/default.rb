@@ -19,6 +19,11 @@
 # limitations under the License.
 #
 
+# FIXME: For working around Chef vs package issues. See FIXME below.
+if(node[:platform_family] == "rhel")
+  package "yum-plugin-tsflags"
+end
+
 # The mongo-10gen-server package depends on mongo-10gen, but doesn't specify a
 # version. So to prevent the server from being upgraded without the client
 # being upgraded, also explicitly install the mongo-10gen with the
@@ -33,6 +38,25 @@ end
 package node[:mongodb][:package_name] do
   action :install
   version node[:mongodb][:package_version]
+
+  # FIXME: Don't run the yum post-installation scripts when upgrading Mongo.
+  # This is due to a few issues with how this chef package installs things (by
+  # relying on a custom init.d and sysconfig files) and the fact that Opscode's
+  # RPMs will overwrite those and restart immediately during the upgrade
+  # process. By not running the yum scripts after an upgrade, Mongo won't get
+  # restarted in a broken state.
+  #
+  # This should all be cleaned up and probably not necessary if the Chef
+  # cookbook starts to use the conf files instead of sysconfig, to better match
+  # what Mongo installs by default from the RPMs:
+  # https://github.com/edelight/chef-mongodb/pull/136
+  # https://github.com/edelight/chef-mongodb/pull/139
+  if(node[:platform_family] == "rhel")
+    intalled = `rpm -qa | grep "#{node[:mongodb][:package_name]}"`
+    if($?.exitstatus == 0)
+      options "--tsflags=noscripts"
+    end
+  end
 end
 
 needs_mongo_gem = (node.recipe?("mongodb::replicaset") or node.recipe?("mongodb::mongos"))
