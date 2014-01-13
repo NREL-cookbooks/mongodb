@@ -19,77 +19,16 @@
 # limitations under the License.
 #
 
-# FIXME: For working around Chef vs package issues. See FIXME below.
-if(node[:platform_family] == "rhel")
-  package "yum-plugin-tsflags"
+include_recipe "mongodb::install"
+
+# configure default instance
+replicaset_recipe = 'mongodb::replicaset'
+configured_as_replicaset = case Chef::Version.new(Chef::VERSION).major
+  when 0..10 then node.recipe?(replicaset_recipe)
+  else node.run_context.loaded_recipe?(replicaset_recipe)
 end
 
-# The mongo-10gen-server package depends on mongo-10gen, but doesn't specify a
-# version. So to prevent the server from being upgraded without the client
-# being upgraded, also explicitly install the mongo-10gen with the
-# package_version specified.
-if(node[:mongodb][:package_name] == "mongo-10gen-server")
-  package "mongo-10gen" do
-    action :install
-    version node[:mongodb][:package_version]
-  end
-end
-
-package node[:mongodb][:package_name] do
-  action :install
-  version node[:mongodb][:package_version]
-
-  # FIXME: Don't run the yum post-installation scripts when upgrading Mongo.
-  # This is due to a few issues with how this chef package installs things (by
-  # relying on a custom init.d and sysconfig files) and the fact that Opscode's
-  # RPMs will overwrite those and restart immediately during the upgrade
-  # process. By not running the yum scripts after an upgrade, Mongo won't get
-  # restarted in a broken state.
-  #
-  # This should all be cleaned up and probably not necessary if the Chef
-  # cookbook starts to use the conf files instead of sysconfig, to better match
-  # what Mongo installs by default from the RPMs:
-  # https://github.com/edelight/chef-mongodb/pull/136
-  # https://github.com/edelight/chef-mongodb/pull/139
-  if(node[:platform_family] == "rhel")
-    intalled = `rpm -qa | grep "#{node[:mongodb][:package_name]}"`
-    if($?.exitstatus == 0)
-      options "--tsflags=noscripts"
-    end
-  end
-end
-
-needs_mongo_gem = (node.recipes.include?("mongodb::replicaset") or node.recipes.include?("mongodb::mongos"))
-
-# install the mongo ruby gem at compile time to make it globally available
-if needs_mongo_gem
-  if(Gem.const_defined?("Version") and Gem::Version.new(Chef::VERSION) < Gem::Version.new('10.12.0'))
-    gem_package 'mongo' do
-      action :nothing
-    end.run_action(:install)
-    Gem.clear_paths
-  else
-    chef_gem 'mongo' do
-      action :install
-    end
-  end
-end
-
-# Create keyFile if specified
-if node[:mongodb][:key_file]
-  file "/etc/mongodb.key" do
-    owner node[:mongodb][:user]
-    group node[:mongodb][:group]
-    mode  "0600"
-    backup false
-    content node[:mongodb][:key_file]
-  end
-end
-
-
-if(!node.recipe?("mongodb::replicaset") && (node.recipe?("mongodb::default") || node.recipe?("mongodb")))
-  # configure default instance
-
+unless configured_as_replicaset
   mongodb_instance node['mongodb']['instance_name'] do
     mongodb_type "mongod"
     bind_ip      node['mongodb']['bind_ip']

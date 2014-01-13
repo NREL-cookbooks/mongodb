@@ -17,10 +17,12 @@
 # limitations under the License.
 #
 
-include_recipe "mongodb"
+node.set[:mongodb][:is_replicaset] = true
 
-# if we are configuring a shard as a replicaset we do nothing in this recipe
-if !node.recipe?("mongodb::shard")
+include_recipe "mongodb::install"
+include_recipe "mongodb::mongo_gem"
+
+unless node.mongodb.is_shard
   mongodb_instance node['mongodb']['instance_name'] do
     mongodb_type "mongod"
     port         node['mongodb']['port']
