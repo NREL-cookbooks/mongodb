@@ -122,6 +122,7 @@ define :mongodb_instance,
     group new_resource.root_group
     owner "root"
     mode "0644"
+    notifies :restart, "service[#{new_resource.name}]"
   end
 
 
