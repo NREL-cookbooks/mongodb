@@ -73,17 +73,6 @@ if(node[:platform_family] == "rhel")
   end
 end
 
-# Create keyFile if specified
-if node[:mongodb][:key_file_content] then
-  file node[:mongodb][:config][:keyFile] do
-    owner node[:mongodb][:user]
-    group node[:mongodb][:group]
-    mode  "0600"
-    backup false
-    content node[:mongodb][:key_file_content]
-  end
-end
-
 # The mongo-10gen-server package depends on mongo-10gen, but doesn't specify a
 # version. So to prevent the server from being upgraded without the client
 # being upgraded, also explicitly install the mongo-10gen with the
@@ -100,4 +89,15 @@ package node[:mongodb][:package_name] do
     options packager_opts
     action :install
     version node[:mongodb][:package_version]
+end
+
+# Create keyFile if specified
+if node[:mongodb][:key_file_content] then
+  file node[:mongodb][:config][:keyFile] do
+    owner node[:mongodb][:user]
+    group node[:mongodb][:group]
+    mode  "0600"
+    backup false
+    content node[:mongodb][:key_file_content]
+  end
 end
