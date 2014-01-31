@@ -1,0 +1,7 @@
+# Log mongo messages
+:programname, startswith, "mongod." <%= node[:mongodb][:logrotate][:path] %>
+:programname, startswith, "mongos." <%= node[:mongodb][:logrotate][:path] %>
+
+# Now discard mongo messages so they don't appear in /var/log/messages 
+:programname, startswith, "mongod." ~
+:programname, startswith, "mongos." ~

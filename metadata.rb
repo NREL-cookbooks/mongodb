@@ -18,6 +18,9 @@ depends "python", ">= 1.3.0"
 depends "runit", ">= 1.1.6"
 depends "yum"
 
+depends "logrotate"
+depends "rsyslog"
+
 %w{ ubuntu debian freebsd centos redhat fedora amazon scientific}.each do |os|
   supports os
 end
