@@ -51,6 +51,18 @@ when "rhel"
     packager_opts = "--nogpgcheck"
 end
 
+# The mongo-10gen-server package depends on mongo-10gen, but doesn't specify a
+# version. So to prevent the server from being upgraded without the client
+# being upgraded, also explicitly install the mongo-10gen with the
+# package_version specified.
+if(node[:mongodb][:package_name] == "mongo-10gen-server")
+  package "mongo-10gen" do
+    options packager_opts
+    action :install
+    version node[:mongodb][:package_version]
+  end
+end
+
 # FIXME: For working around Chef vs package issues. See FIXME below.
 if(node[:platform_family] == "rhel")
   package "yum-plugin-tsflags"
@@ -70,17 +82,6 @@ if(node[:platform_family] == "rhel")
   intalled = `rpm -qa | grep "#{node[:mongodb][:package_name]}"`
   if($?.exitstatus == 0)
     packager_opts << " --tsflags=noscripts"
-  end
-end
-
-# The mongo-10gen-server package depends on mongo-10gen, but doesn't specify a
-# version. So to prevent the server from being upgraded without the client
-# being upgraded, also explicitly install the mongo-10gen with the
-# package_version specified.
-if(node[:mongodb][:package_name] == "mongo-10gen-server")
-  package "mongo-10gen" do
-    action :install
-    version node[:mongodb][:package_version]
   end
 end
 
