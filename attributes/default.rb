@@ -118,3 +118,7 @@ default[:mongodb][:replicaset_name] = nil #replSet
 # name is being clarified
 default[:mongodb][:key_file] = nil # keyFile's contents
 default[:mongodb][:key_file_content] = node[:mongodb][:key_file]
+
+# passwords and users
+default[:mongodb][:use_admin_password] = false
+default[:mongodb][:users] = []
