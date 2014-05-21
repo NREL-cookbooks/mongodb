@@ -3,7 +3,8 @@
 #
 
 <%- node['mongodb']['config'].to_hash.keys.sort.each do |key| %>
-    <%- if not node['mongodb']['config'][key].nil? %>
+    <%- # Allow the special "nil" value to unset config variables. This is a weird workaround for not being able to override attributes with nil from roles, and the mongo `logpath` attribute needing to be nil when `syslog` is true. %>
+    <%- if(!node['mongodb']['config'][key].nil? && node['mongodb']['config'][key].to_s != "nil") %>
 <%= key %> = <%= node['mongodb']['config'][key] %>
     <% end %>
 <%- end %>
