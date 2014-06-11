@@ -44,6 +44,10 @@ when "rhel","fedora"
   end
   node.override['mongodb']['package_name'] = "mongo-10gen-server"
 
+  if(node[:mongodb][:package_version] && node[:mongodb][:package_version].to_f >= 2.6)
+    node.override['mongodb']['package_name'] = "mongodb-org-server"
+  end
+
 else
     # pssst build from source
     Chef::Log.warn("Adding the #{node['platform_family']} 10gen repository is not yet not supported by this cookbook")

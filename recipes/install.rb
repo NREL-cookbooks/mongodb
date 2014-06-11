@@ -51,12 +51,43 @@ when "rhel"
     packager_opts = "--nogpgcheck"
 end
 
+if(node[:mongodb][:package_version] && node[:mongodb][:package_version].to_f <= 2.4)
+  # As part of MongoDB's "10gen" to "mongodb-org" transition they declared
+  # their 2.4 10gen packages obsolete. This means everything automatically gets
+  # upgraded to the new mognodb-org 2.6 packages automatically. To prevent this
+  # from happening, exclude all the new "mongodb-org" 2.6 packages if we were
+  # explicitly trying to install 2.4.
+  packager_opts << " --exclude='mongodb-org*'"
+
+  # On systems that were accidentally upgraded to 2.6, uninstall the 2.6
+  # packages so then the 2.4 packages can be reinstalled properly.
+  uninstall_packages = [
+    "mongodb-org",
+    "mongodb-org-mongos",
+    "mongodb-org-server",
+    "mongodb-org-shell",
+    "mongodb-org-tools",
+  ]
+
+  uninstall_packages.each do |package_name|
+    package(package_name) do
+      action :remove
+    end
+  end
+end
+
 # The mongo-10gen-server package depends on mongo-10gen, but doesn't specify a
 # version. So to prevent the server from being upgraded without the client
 # being upgraded, also explicitly install the mongo-10gen with the
 # package_version specified.
 if(node[:mongodb][:package_name] == "mongo-10gen-server")
   package "mongo-10gen" do
+    options packager_opts
+    action :install
+    version node[:mongodb][:package_version]
+  end
+elsif(node[:mongodb][:package_name] == "mongodb-org-server")
+  package "mongodb-org" do
     options packager_opts
     action :install
     version node[:mongodb][:package_version]
