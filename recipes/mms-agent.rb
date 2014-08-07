@@ -26,6 +26,7 @@ remote_file "#{Chef::Config[:file_cache_path]}/mms-monitoring-agent.zip" do
   # irrelevant because of https://jira.mongodb.org/browse/MMSSUPPORT-2258
   checksum node.mongodb.mms_agent.checksum if node.mongodb.mms_agent.key?(:checksum)
   notifies :run, "bash[unzip mms-monitoring-agent]", :immediately
+  only_if { !File.exists?("#{Chef::Config[:file_cache_path]}/mms-monitoring-agent.zip") }
 end
 directory "#{node.mongodb.mms_agent.install_dir}/.." do
   recursive true
