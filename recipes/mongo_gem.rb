@@ -2,10 +2,12 @@
 if(Gem.const_defined?("Version") and Gem::Version.new(Chef::VERSION) < Gem::Version.new('10.12.0'))
   gem_package 'mongo' do
     action :nothing
+    version node[:mongodb][:gem_version]
   end.run_action(:install)
   Gem.clear_paths
 else
   chef_gem 'mongo' do
     action :install
+    version node[:mongodb][:gem_version]
   end
 end
